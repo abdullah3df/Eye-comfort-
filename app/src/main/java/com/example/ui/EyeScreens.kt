@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -70,6 +72,7 @@ fun EyeBreakApp(viewModel: EyeViewModel) {
                 label = "ScreenTransition"
             ) { screen ->
                 when (screen) {
+                    Screen.Disclaimer -> DisclaimerScreen(viewModel)
                     Screen.Dashboard -> DashboardScreen(viewModel)
                     Screen.Exercise -> ExerciseScreen(viewModel)
                     Screen.PostFeedback -> PostFeedbackScreen(viewModel)
@@ -109,6 +112,21 @@ fun DashboardScreen(viewModel: EyeViewModel) {
     }
 
     var activeTab by remember { mutableStateOf(DashboardTab.Home) }
+    var showMedicalGuidelinesSheet by remember { mutableStateOf(false) }
+
+    if (showMedicalGuidelinesSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMedicalGuidelinesSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            MedicalGuidelinesSheetContent(
+                selectedLanguage = selectedLanguage,
+                onDismiss = { showMedicalGuidelinesSheet = false }
+            )
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -146,6 +164,21 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                             fontWeight = FontWeight.Black,
                             style = MaterialTheme.typography.titleLarge
                         )
+                    }
+                },
+                actions = {
+                    if (activeTab == DashboardTab.Home) {
+                        IconButton(
+                            onClick = { showMedicalGuidelinesSheet = true },
+                            modifier = Modifier.testTag("info_medical_guidelines")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Medical Guidelines Info Icon",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -329,72 +362,57 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                             }
                         }
 
-                        // 2. PRIMARY MASTER SHIELD TRIGGER CARD
+                        // 2. PRIMARY MASTER SHIELD TRIGGER CARD (MINIMALIST SINGLE SWITCH TRIGGER)
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(24.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isServiceRunning) {
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
                                     } else {
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
                                     }
                                 ),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(18.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Button(
-                                        onClick = {
-                                            if (isServiceRunning) {
-                                                viewModel.stopEyeProtection()
-                                            } else {
-                                                viewModel.startEyeProtection()
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(56.dp)
-                                            .testTag("protection_toggle_button"),
-                                        shape = CircleShape,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (isServiceRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = if (selectedLanguage == "ar") "تشغيل حماية العين" else "Start/Stop Eye Protection",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isServiceRunning) Icons.Default.Close else Icons.Default.PlayArrow,
-                                            contentDescription = null
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = if (isServiceRunning) {
-                                                if (selectedLanguage == "ar") "إلغاء تفعيل درع الحماية" else "Deactivate Eye Shield"
+                                                if (selectedLanguage == "ar") "درع النظر نشط وفعّال" else "Protection is active"
                                             } else {
-                                                if (selectedLanguage == "ar") "تفعيل وحماية العين الآن" else "Activate Eye Shield"
+                                                if (selectedLanguage == "ar") "الحماية متوقفة حالياً" else "Protection is stopped"
                                             },
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleMedium
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
                                     }
-
-                                    if (isServiceRunning) {
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        OutlinedButton(
-                                            onClick = { viewModel.startScreenBreak() },
-                                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                                            shape = CircleShape
-                                        ) {
-                                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = if (selectedLanguage == "ar") "أخذ استراحة جيفية فورية" else "Take Quick Manual Break",
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
+                                    
+                                    Switch(
+                                        checked = isServiceRunning,
+                                        onCheckedChange = { active ->
+                                            if (active) {
+                                                viewModel.startEyeProtection()
+                                            } else {
+                                                viewModel.stopEyeProtection()
+                                            }
+                                        },
+                                        modifier = Modifier.testTag("protection_toggle_switch")
+                                    )
                                 }
                             }
                         }
@@ -948,6 +966,51 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                             }
                         }
 
+                        // 4.5 TERMS AND MEDICAL DISCLAIMER REVIEW CARD
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .clickable { viewModel.showDisclaimer() }
+                                        .padding(18.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = if (selectedLanguage == "ar") "شروط الخدمة وإخلاء المسؤولية" else "Terms & Medical Disclaimer",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = if (selectedLanguage == "ar") {
+                                                "راجع سياسة الخصوصية المحلية وبنود المسؤولية الطبية المعتمدة وموانع الاستخدام."
+                                            } else {
+                                                "Review local privacy, approved medical non-liability clauses, and terms of service."
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = "Review Disclaimer Icon",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+
                         // 5. SUGGESTION AND FEEDBACK DIRECTIVES SECTION
                         item {
                             val supportEmail = "info.cik@cikcoin.art"
@@ -1296,16 +1359,18 @@ fun ExerciseScreen(viewModel: EyeViewModel) {
                             }
 
                             val progress = if (totalDuration > 0) timeLeft.toFloat() / totalDuration else 1f
+                            val activeColor = MaterialTheme.colorScheme.primary
+                            val trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                             Canvas(modifier = Modifier.size(180.dp)) {
                                 drawArc(
-                                    color = Color(0xFFABC7FF).copy(alpha = 0.3f),
+                                    color = trackColor,
                                     startAngle = -90f,
                                     sweepAngle = 360f,
                                     useCenter = false,
                                     style = Stroke(width = 3.dp.toPx())
                                 )
                                 drawArc(
-                                    color = Color(0xFF005FB0),
+                                    color = activeColor,
                                     startAngle = -90f,
                                     sweepAngle = 360f * progress,
                                     useCenter = false,
@@ -1862,5 +1927,368 @@ fun getStrainColor(levelName: String): Color {
         "medium" -> Color(0xFFFF9800)
         "severe" -> Color(0xFFF44336)
         else -> Color(0xFF8BC34A)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun MedicalGuidelinesSheetContent(selectedLanguage: String, onDismiss: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (selectedLanguage == "ar") "الإرشادات الطبية المعتمدة" else "Approved Medical Guidelines",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = "Close Sheet")
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = if (selectedLanguage == "ar") {
+                "أربع قواعد لقضاء راحة العين وحمايتها من الإجهاد الرقمي وفقاً لتوصيات الجمعية الرائدة للرعاية العينية:"
+            } else {
+                "Four essential methods backed by medical consensus to ease computer vision fatigue and digital strain:"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        val guidelines = listOf(
+            GuidelineItem(
+                title_en = "1. 20-20-20 Rule",
+                title_ar = "١. قاعدة 20-20-20",
+                desc_en = "Every 20 minutes, focus on an object at least 20 feet away for 20 seconds. This relaxes the ciliary eye muscles and resets visual focus.",
+                desc_ar = "كل ٢٠ دقيقة من النظر للشاشة، ركز على جسم يبعد ٢٠ قدماً (٦ أمتار) على الأقل لمدة ٢٠ ثانية لإراحة العضلة الهدبية للعين.",
+                icon = Icons.Default.Favorite
+            ),
+            GuidelineItem(
+                title_en = "2. Intentional Blinking",
+                title_ar = "٢. الرمش بوعي وتعمّد",
+                desc_en = "Squeeze your eyes gently and blink consciously to restore the tear film. Humans blink roughly 66% less while staring at monitors.",
+                desc_ar = "أغمض عينيك بلطف وارمش بوعي لتوزيع الغشاء الدمعي. ينخفض معدل رمش الطبيعي لدى الإنسان بنسبة ٦٦٪ عند التحديق بالهواتف.",
+                icon = Icons.Default.Refresh
+            ),
+            GuidelineItem(
+                title_en = "3. Palming",
+                title_ar = "٣. تمرين كف اليد (Palming)",
+                desc_en = "Rub your hands together to generate gentle warmth, then place your cupped palms over closed eyes for 30-60s. Warm darkness relaxes the optic nerve.",
+                desc_ar = "افرك كفيك معاً لتوليد طاقة دفء لطيفة، ثم غطِ عينيك المغلقتين برفق بوعاء يديك لمدة دقيقة لتسهيل إراحة الخلايا العصبية والقرنية.",
+                icon = Icons.Default.Face
+            ),
+            GuidelineItem(
+                title_en = "4. Screen Ergonomics",
+                title_ar = "٤. بيئة ونظم الشاشة الصحية",
+                desc_en = "Keep the phone exactly 30-40 cm away and hold the screen slightly below eye level (10-15 cm) to reduce tear film depletion and dynamic evaporation.",
+                desc_ar = "أمسك الهاتف بمسافة ٣٠-٤٠ سم بعيداً، واجعل مستوى الشاشة أكثر انخفاضاً من مستوى عينيك بـ ١٠-١٥ سم لتفادي التبخر المتكرر للدمع.",
+                icon = Icons.Default.CheckCircle
+            )
+        )
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(guidelines) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (selectedLanguage == "ar") item.title_ar else item.title_en,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (selectedLanguage == "ar") item.desc_ar else item.desc_en,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                lineHeight = 18.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+data class GuidelineItem(
+    val title_en: String,
+    val title_ar: String,
+    val desc_en: String,
+    val desc_ar: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DisclaimerScreen(viewModel: EyeViewModel) {
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
+    val isDisclaimerAlreadyAccepted = remember { viewModel.isDisclaimerAccepted() }
+    var isAccepted by remember { mutableStateOf(isDisclaimerAlreadyAccepted) }
+    val scrollState = rememberScrollState()
+
+    val isAr = selectedLanguage == "ar"
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            if (isDisclaimerAlreadyAccepted) {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = if (isAr) "شروط الاستخدام والخصوصية" else "Terms & Privacy",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.resetToDashboard() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back icon",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (!isDisclaimerAlreadyAccepted) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Header Shield Icon
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
+            // Title block
+            Text(
+                text = if (isAr) "شروط الاستخدام وإخلاء المسؤولية" else "Terms & Medical Disclaimer",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = if (isAr) "يرجى قراءة الشروط والموافقة عليها للبدء" else "Please read and accept the guidelines to continue",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Scrollable text Area (inside a card)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                    ) {
+                        Text(
+                            text = if (isAr) "١. إخلاء المسؤولية الطبية" else "1. Medical Disclaimer",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (isAr) {
+                                "هذا التطبيق (مساعد حماية العين) ليس جهازاً طبياً. لم يتم تقييم محتواه أو تمارينه من قِبل أي منظمة صحية معتمدة لعلاج أمراض العيون أو الوقاية منها. التمارين والمقترحات والأنماات البصرية الارتدادية المقدمة منه، بما في ذلك قاعدة (20-20-20)، تهدف حصراً إلى التوعية بالعادات والراحة والوقاية المكتبية العامة. يجب استشارة طبيب عيون مرخص فور الشعور بأي ألم بصري أو ضعف حاد بالنظر."
+                            } else {
+                                "This application (Eye Break Assistant) is NOT a medical device. Its contents, features, and exercises have not been evaluated or certified by any ophthalmological association or regulatory healthcare agency to diagnose, treat, or prevent any optical or systemic disease. All suggestions and interactive guides (such as the 20-20-20 Rule and Palming) are intended strictly for dynamic posture, micro-relaxation, and eye comfort habits. Consult a licensed ophthalmologist immediately if you experience visual eye pain, severe fatigue, or visual deterioration."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            lineHeight = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(18.dp))
+                        
+                        Text(
+                            text = if (isAr) "٢. حدود المسؤولية" else "2. Limitation of Liability",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (isAr) {
+                                "باستخدامك لهذا التطبيق، فإنك تقر وتوافق على أن تشغيله وإرشادات التمارين تتم على مسؤوليتك الخاصة. لا يتحمل المطورون أو الجهة المالكة أي مسؤولية عن تطور أي عرض طبي، أو إجهاد حاد بالقرنية أو الصداع، أو متلازمات الرؤية الرقمية المقترنة بالأجهزة اللوحية."
+                            } else {
+                                "By utilizing this application, you explicitly acknowledge and agree that your participation in any visual exercise is at your sole personal risk. The developers assume no direct or indirect liability for any physical or dynamic optical syndromes, computer vision syndrome (CVS) advancement, chronic headaches, or any visual degradation allegedly correlated with using this comfort system."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            lineHeight = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(18.dp))
+                        
+                        Text(
+                            text = if (isAr) "٣. سياسة حماية الخصية" else "3. Privacy Policy Summary",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (isAr) {
+                                "يبقى سجل أخذ الاستراحات ومستوى التعب البصري (قبل وبعد التمرين) مخزناً بالكامل محلياً وبشكل مشفر في قاعدة بيانات SQLite مدمجة بجهازك الشخصي. لا نقوم برفع أو نقل أي بيانات صحية أو شخصية لخوادم خارجية على الإطلاق."
+                            } else {
+                                "All completed eye break records, dynamic timestamps, and pre/post fatigue evaluation logs are stored entirely in a secure local Room SQLite database embedded on your operating device. No health metrics, local usage analytics, or identity indexes are transmitted to remote servers."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            lineHeight = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Checkbox Container Row (minimum touch target 48dp, interactive, clickable)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { isAccepted = !isAccepted }
+                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = isAccepted,
+                    onCheckedChange = { isAccepted = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        uncheckedColor = MaterialTheme.colorScheme.outline
+                    ),
+                    modifier = Modifier.testTag("disclaimer_checkbox")
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isAr) {
+                        "لقد قرأت الشروط الطبية وإخلاء المسؤولية وأوافق عليها تماماً"
+                    } else {
+                        "I have read and agree to the Terms & Medical Disclaimer."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Accept Button
+            Button(
+                onClick = {
+                    if (isAccepted) {
+                        viewModel.acceptDisclaimer()
+                    }
+                },
+                enabled = isAccepted,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .testTag("accept_button"),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = if (isAr) "موافقة ومتابعة" else "Accept & Continue",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
     }
 }

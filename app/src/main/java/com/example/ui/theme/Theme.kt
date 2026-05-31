@@ -12,33 +12,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SleekPrimaryDark,
-    secondary = SleekSecondaryDark,
-    tertiary = SleekTertiaryDark,
-    background = SleekBackgroundDark,
-    surface = SleekSurfaceDark,
-    primaryContainer = SleekAccentContainerDark,
-    onPrimaryContainer = SleekOnAccentDark,
-    onPrimary = SleekBackgroundDark,
-    onSecondary = SleekOnBackgroundDark,
-    onTertiary = SleekBackgroundDark,
-    onBackground = SleekOnBackgroundDark,
-    onSurface = SleekOnBackgroundDark
+    primary = SageTealPrimaryDark,
+    secondary = SageTealSecondaryDark,
+    tertiary = SageTealTertiaryDark,
+    background = deepForestBackgroundDark,
+    surface = deepForestSurfaceDark,
+    primaryContainer = deepForestSurfaceDark,
+    onPrimaryContainer = deepForestOnPrimaryContainer,
+    onPrimary = deepForestBackgroundDark,
+    onSecondary = deepForestOnBackgroundDark,
+    onTertiary = deepForestBackgroundDark,
+    onBackground = deepForestOnBackgroundDark,
+    onSurface = deepForestOnBackgroundDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = SleekPrimaryLight,
-    secondary = SleekSecondaryLight,
-    tertiary = SleekTertiaryLight,
-    background = SleekBackgroundLight,
-    surface = SleekSurfaceLight,
-    primaryContainer = SleekAccentContainerLight,
-    onPrimaryContainer = SleekOnAccentLight,
+    primary = SageTealPrimaryLight,
+    secondary = SageTealSecondaryLight,
+    tertiary = SageTealTertiaryLight,
+    background = creamBackgroundLight,
+    surface = creamSurfaceLight,
+    primaryContainer = creamSurfaceLight,
+    onPrimaryContainer = creamOnPrimaryContainer,
     onPrimary = Color.White,
-    onSecondary = SleekOnBackgroundLight,
-    onTertiary = SleekOnBackgroundLight,
-    onBackground = SleekOnBackgroundLight,
-    onSurface = SleekOnBackgroundLight
+    onSecondary = creamOnBackgroundLight,
+    onTertiary = creamOnBackgroundLight,
+    onBackground = creamOnBackgroundLight,
+    onSurface = creamOnBackgroundLight
 )
 
 @Composable

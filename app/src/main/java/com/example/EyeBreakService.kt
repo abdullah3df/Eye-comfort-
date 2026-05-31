@@ -23,7 +23,8 @@ class EyeBreakService : Service() {
     private var screenReceiver: BroadcastReceiver? = null
 
     companion object {
-        private const val CHANNEL_ID = "eye_break_monitoring_channel"
+        private const val CHANNEL_ID_SILENT = "eye_break_silent_channel"
+        private const val CHANNEL_ID_ALARM = "eye_break_alarm_channel"
         private const val NOTIFICATION_ID = 8801
 
         // Static reactive flows readable by components in the same process
@@ -194,7 +195,7 @@ class EyeBreakService : Service() {
 
         val stopText = if (lang == "ar") "إيقاف الحماية" else "Stop Protection"
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID_SILENT)
             .setContentTitle(title)
             .setContentText(statusMessage)
             .setStyle(NotificationCompat.BigTextStyle().bigText(statusMessage))
@@ -234,13 +235,14 @@ class EyeBreakService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID_ALARM)
             .setContentTitle(alertTitle)
             .setContentText(alertMessage)
             .setStyle(NotificationCompat.BigTextStyle().bigText(alertMessage))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .setVibrate(longArrayOf(0, 500, 200, 500))
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setContentIntent(pendingIntent)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -249,15 +251,31 @@ class EyeBreakService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Continuous Eye Safety Monitor"
-            val descriptionText = "Tracks continuous screen usage and sends ophthalmologist tips on screen breaks."
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-                enableVibration(true)
-            }
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            
+            // CHANNEL 1: Silent & Persistent (Importance Low)
+            val silentChannel = NotificationChannel(
+                CHANNEL_ID_SILENT,
+                "Eye Safety Background Monitor",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows the active screen tracking status silently in the background."
+                enableVibration(false)
+                setSound(null, null)
+            }
+            notificationManager.createNotificationChannel(silentChannel)
+
+            // CHANNEL 2: Alert & Loud (Importance High)
+            val alarmChannel = NotificationChannel(
+                CHANNEL_ID_ALARM,
+                "Eye Break Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Triggers high-priority eye safety alarms and rest alerts."
+                enableVibration(true)
+                enableLights(true)
+            }
+            notificationManager.createNotificationChannel(alarmChannel)
         }
     }
 

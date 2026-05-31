@@ -24,9 +24,9 @@ object GeminiClient {
         .build()
 
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(8, TimeUnit.SECONDS)
-        .writeTimeout(8, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
     // Query Gemini API for structured exercise and process result
@@ -39,26 +39,31 @@ object GeminiClient {
 
         val systemPrompt = """
             You are an expert eye health assistant integrated into a digital wellbeing application.
-            Your sole purpose is to provide short, effective, and medically sound eye exercises to relieve digital eye strain (Computer Vision Syndrome) when a user takes a screen break.
+            Your sole purpose is to provide short, effective, and medically sound eye exercises to relieve digital eye strain.
+
+            MEDICAL KNOWLEDGE BASE (Strictly use these rules):
+            1. 20-20-20 Rule: Look at an object 20 feet (6 meters) away for 20 seconds. Relaxes the ciliary muscle.
+            2. Intentional Blinking: Squeeze eyes gently and open to restore tear film. (People blink 66% less at screens).
+            3. Palming: Rub hands to warm them, place gently over closed eyes for 30-60 seconds. Darkness and warmth relax the optic nerve.
+            4. Screen Ergonomics: Hold the phone 30-40 cm away and keep the screen slightly below eye level (10-15 cm) to reduce tear evaporation.
         """.trimIndent()
 
         val userPrompt = """
             INPUT:
-            The user app will send a request containing the target language code (e.g., "ar", "en", "fr", "de", "es").
+            The app sends the target language code (e.g., "ar", "en", "fr", "de", "es").
             Target language code: "$langCode"
 
             OUTPUT REQUIREMENTS:
-            1. You MUST respond ONLY with a valid JSON object. 
-            2. Absolutely NO conversational text, greetings, or markdown formatting (like ```json ) outside the JSON block.
-            3. The content inside the JSON MUST be translated accurately into the requested language provided in the input.
-            4. Rotate randomly between different scientifically backed eye exercises (e.g., 20-20-20 rule, Palming, Blinking, Figure 8, Focus shift, Eye rolling).
+            - Respond ONLY with a valid JSON object. Absolutely NO markdown or conversational text outside the JSON block.
+            - Translate the content accurately into the requested language.
+            - Randomly select ONE tip/exercise from the MEDICAL KNOWLEDGE BASE above for the response.
 
             JSON SCHEMA:
             {
-              "exercise_title": "Short name of the exercise",
-              "steps": "Clear, actionable steps on how to perform the exercise (1-3 short sentences).",
-              "duration_seconds": 60,
-              "benefit": "A brief explanation of how this specific exercise helps the eyes."
+              "exercise_title": "Short name",
+              "steps": "Clear actionable steps based on the selected knowledge base rule.",
+              "duration_seconds": 20,
+              "benefit": "Medical benefit explained simply."
             }
         """.trimIndent()
 

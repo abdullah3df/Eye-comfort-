@@ -29,6 +29,7 @@ sealed interface UiState {
 }
 
 enum class Screen {
+    Disclaimer,
     Dashboard,
     Exercise,
     PostFeedback
@@ -62,7 +63,9 @@ class EyeViewModel(application: Application) : AndroidViewModel(application) {
     val isOfflineMode: StateFlow<Boolean> = _isOfflineMode.asStateFlow()
 
     // Current navigation screen
-    private val _currentScreen = MutableStateFlow(Screen.Dashboard)
+    private val _currentScreen = MutableStateFlow(
+        if (prefs.getBoolean("disclaimer_accepted", false)) Screen.Dashboard else Screen.Disclaimer
+    )
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
 
     // Gemini network fetch status
@@ -123,6 +126,23 @@ class EyeViewModel(application: Application) : AndroidViewModel(application) {
     fun setOfflineMode(enabled: Boolean) {
         _isOfflineMode.value = enabled
         prefs.edit().putBoolean("offline_mode", enabled).apply()
+    }
+
+    fun acceptDisclaimer() {
+        prefs.edit().putBoolean("disclaimer_accepted", true).apply()
+        _currentScreen.value = Screen.Dashboard
+    }
+
+    fun showDisclaimer() {
+        _currentScreen.value = Screen.Disclaimer
+    }
+
+    fun isDisclaimerAccepted(): Boolean {
+        return prefs.getBoolean("disclaimer_accepted", false)
+    }
+
+    fun resetDisclaimerAcceptance() {
+        prefs.edit().putBoolean("disclaimer_accepted", false).apply()
     }
 
     var onStartServiceRequested: (() -> Unit)? = null
