@@ -1,0 +1,6 @@
+{
+  "name": "Eye Break Assistant",
+  "description": "Short, medically sound eye exercises to relieve digital eye strain (Computer Vision Syndrome) during screen breaks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
