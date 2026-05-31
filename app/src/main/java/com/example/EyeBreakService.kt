@@ -96,6 +96,16 @@ class EyeBreakService : Service() {
         registerReceiver(screenReceiver, filter)
 
         _isRunning.value = true
+
+        // Subscribe to alert state changes internally to update notification exactly once on state transition
+        serviceScope.launch {
+            _isAlertTriggered.collect { triggered ->
+                if (_isRunning.value) {
+                    updateNotification(triggered)
+                }
+            }
+        }
+
         resumeTicker()
     }
 
@@ -107,7 +117,9 @@ class EyeBreakService : Service() {
         }
         try {
             createNotificationChannel()
-            startForeground(NOTIFICATION_ID, buildStatusNotification())
+            // Immediately start foreground service using the correct state's notification
+            val initialNotification = if (_isAlertTriggered.value) buildAlertNotification() else buildStatusNotification()
+            startForeground(NOTIFICATION_ID, initialNotification)
             android.util.Log.d("EyeBreakService", "Service started successfully")
         } catch (e: Exception) {
             android.util.Log.e("EyeBreakService", "Error: failed to start", e)
@@ -126,10 +138,9 @@ class EyeBreakService : Service() {
                     _screenOnTimeSeconds.value++
                     val targetSeconds = _selectedIntervalMinutes.value * 60L
                     if (_screenOnTimeSeconds.value >= targetSeconds) {
-                        _isAlertTriggered.value = true
-                        updateNotification(isAlert = true)
-                    } else {
-                        updateNotification(isAlert = false)
+                        if (!_isAlertTriggered.value) {
+                            _isAlertTriggered.value = true
+                        }
                     }
                 }
             }
@@ -147,16 +158,18 @@ class EyeBreakService : Service() {
 
     private fun buildStatusNotification(): Notification {
         val lang = getLanguage(this)
-        val elapsedMins = _screenOnTimeSeconds.value / 60
-        val elapsedSecs = _screenOnTimeSeconds.value % 60
-
-        val title = Localization.get(lang, "app_title")
-        val statusLabelTemplate = if (lang == "ar") {
-            "حماية العين الذكية مفعلة 🟢\nزمن استخدام الشاشة المستمر: %02d:%02d دقيقة"
+        
+        val title = if (lang == "ar") {
+            "حماية العين نشطة"
         } else {
-            "Continuous active eye strain defense 🟢\nActive screen time: %02d:%02d mins"
+            "Eye Protection Active"
         }
-        val statusMessage = statusLabelTemplate.format(elapsedMins, elapsedSecs)
+        
+        val statusMessage = if (lang == "ar") {
+            "حماية العين نشطة 👁 - جاري مراقبة وقت الشاشة."
+        } else {
+            "Eye Protection Active 👁 - Monitoring your screen time."
+        }
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -201,13 +214,13 @@ class EyeBreakService : Service() {
         val alertTitle = if (lang == "ar") {
             "حان وقت راحة العين! 👁"
         } else {
-            "Time to rest your eyes! 👁"
+            "Time's up! 👁"
         }
         
         val alertMessage = if (lang == "ar") {
-            "دَع هاتفك وانظر بعيداً الآن. اضغط هنا لبدء تمارين الاسترخاء الذكية."
+            "انتهى الوقت! ابتعد عن شاشة الهاتف وأرح عينيك لمدة 20 ثانية 👁"
         } else {
-            "Leave your phone and look away. Tap here to start localized eye relief exercises."
+            "Time's up! Look away from your phone and rest your eyes for 20 seconds 👁"
         }
 
         val intent = Intent(this, MainActivity::class.java).apply {

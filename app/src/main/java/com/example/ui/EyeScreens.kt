@@ -1,6 +1,7 @@
 package com.example.ui
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -78,6 +79,12 @@ fun EyeBreakApp(viewModel: EyeViewModel) {
     }
 }
 
+enum class DashboardTab {
+    Home,
+    Stats,
+    Settings
+}
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: EyeViewModel) {
@@ -101,6 +108,8 @@ fun DashboardScreen(viewModel: EyeViewModel) {
         post < pre
     }
 
+    var activeTab by remember { mutableStateOf(DashboardTab.Home) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -117,7 +126,11 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Favorite,
+                                imageVector = when (activeTab) {
+                                    DashboardTab.Home -> Icons.Default.Favorite
+                                    DashboardTab.Stats -> Icons.Default.CheckCircle
+                                    DashboardTab.Settings -> Icons.Default.Settings
+                                },
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(20.dp)
@@ -125,8 +138,12 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = Localization.get(selectedLanguage, "app_title"),
-                            fontWeight = FontWeight.Bold,
+                            text = when (activeTab) {
+                                DashboardTab.Home -> Localization.get(selectedLanguage, "app_title")
+                                DashboardTab.Stats -> if (selectedLanguage == "ar") "تحليل الاستراحة" else "Comfort Analytics"
+                                DashboardTab.Settings -> Localization.get(selectedLanguage, "settings_title")
+                            },
+                            fontWeight = FontWeight.Black,
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
@@ -135,447 +152,802 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                     containerColor = Color.Transparent
                 )
             )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // MAIN COMPACT SERVICE CONTROLLER
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isServiceRunning) {
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        }
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (isServiceRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = if (selectedLanguage == "ar") "درع حماية النظر الذكي" else "Optical Break Shield",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = if (isServiceRunning) {
-                                if (selectedLanguage == "ar") "حالة الحماية: نشطة بالخلفية 🟢" else "Protection Status: ACTIVE IN BACKGROUND 🟢"
-                            } else {
-                                if (selectedLanguage == "ar") "حالة الحماية: معطلة 🔴" else "Protection Status: INACTIVE 🔴"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isServiceRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // SINGLE MASTER START/STOP BUTTON
-                        Button(
-                            onClick = {
-                                if (isServiceRunning) {
-                                    viewModel.stopEyeProtection()
-                                } else {
-                                    viewModel.startEyeProtection()
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .testTag("protection_toggle_button"),
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isServiceRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isServiceRunning) Icons.Default.Close else Icons.Default.PlayArrow,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = if (isServiceRunning) {
-                                    if (selectedLanguage == "ar") "إلغاء التفعيل والبرنامج" else "Deactivate Eye Protection"
-                                } else {
-                                    if (selectedLanguage == "ar") "تفعيل وحماية العين" else "Activate Eye Protection"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        // REALTIME STATS TRACKER OVERLAY
-                        if (isServiceRunning) {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            val targetSeconds = selectedIntervalMinutes * 60L
-                            val progress = if (targetSeconds > 0) (screenOnSeconds.toFloat() / targetSeconds).coerceIn(0f, 1f) else 0f
-                            
-                            val elapsedMins = screenOnSeconds / 60
-                            val elapsedSecs = screenOnSeconds % 60
-
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (selectedLanguage == "ar") "مؤقت الاستخدام المستمر:" else "Continuous Screen-On Time:",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        text = "$elapsedMins:%02d / $selectedIntervalMinutes:00".format(elapsedSecs),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                LinearProgressIndicator(
-                                    progress = { progress },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(10.dp)
-                                        .clip(CircleShape),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                                )
-                                Spacer(modifier = Modifier.height(14.dp))
-                                // Quick break override button
-                                OutlinedButton(
-                                    onClick = { viewModel.startScreenBreak() },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = CircleShape
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (selectedLanguage == "ar") "أخذ استراحة يدوية فورية" else "Take Quick Manual Break",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // DYNAMIC INLINE CONFIGURATION BOX
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = if (selectedLanguage == "ar") "لوحة ضبط التفضيلات والخيارات" else "Settings & Configurations",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        // 1. SELECTABLE LANGUAGE PILLS
-                        Column {
-                            Text(
-                                text = Localization.get(selectedLanguage, "target_lang"),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                val languages = listOf(
-                                    "en" to "🇺🇸 EN",
-                                    "ar" to "🇸🇦 AR",
-                                    "fr" to "🇫🇷 FR",
-                                    "de" to "🇩🇪 DE",
-                                    "es" to "🇪🇸 ES"
-                                )
-                                languages.forEach { (code, label) ->
-                                    val isSelected = selectedLanguage == code
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.setLanguage(code) },
-                                        label = { Text(label, fontWeight = FontWeight.Bold) },
-                                        modifier = Modifier.testTag("language_selector_$code"),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-
-                        // 2. CHOOSE SCREEN INTERVAL RATE (X mins)
-                        Column {
-                            Text(
-                                text = if (selectedLanguage == "ar") "دورة جدولة التنبيه التلقائي:" else "Auto-Alert Interval Cycle:",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (selectedLanguage == "ar") {
-                                    "سيقوم التطبيق بتحديث التنبيه بـ الستارة فور تخطي الاستخدام الفعلي الوقت المحدد."
-                                } else {
-                                    "The app background service updates automatically once screen usage passes selected duration."
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                val intervals = listOf(
-                                    1 to (if (selectedLanguage == "ar") "١ دقيقة للتجربة" else "1 Min (Test)"),
-                                    5 to (if (selectedLanguage == "ar") "٥ دقائق" else "5 Mins"),
-                                    20 to (if (selectedLanguage == "ar") "٢٠ دقيقة" else "20 Mins"),
-                                    30 to (if (selectedLanguage == "ar") "٣٠ دقيقة" else "30 Mins"),
-                                    60 to (if (selectedLanguage == "ar") "٦٠ دقيقة" else "60 Mins")
-                                )
-                                intervals.forEach { (mins, label) ->
-                                    val isSelected = selectedIntervalMinutes == mins
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.updateServiceInterval(mins) },
-                                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-
-                        // 3. GENERATION STYLE AI / OFFLINE
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = Localization.get(selectedLanguage, "settings_mode"),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = if (isOfflineMode) {
-                                        Localization.get(selectedLanguage, "settings_mode_offline")
-                                    } else {
-                                        Localization.get(selectedLanguage, "settings_mode_gemini")
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                )
-                            }
-                            Switch(
-                                checked = !isOfflineMode,
-                                onCheckedChange = { viewModel.setOfflineMode(!it) },
-                                modifier = Modifier.testTag("mode_switch")
-                            )
-                        }
-                    }
-                }
-            }
-
-            // HISTORIC COMFORT STATUS DASH DETAILS
-            item {
-                WellnessStatsRow(
-                    selectedLanguage = selectedLanguage,
-                    breaks = totalBreaks,
-                    seconds = totalSecondsRelaxed,
-                    improvements = improvementCount
+        },
+        bottomBar = {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                NavigationBarItem(
+                    selected = activeTab == DashboardTab.Home,
+                    onClick = { activeTab = DashboardTab.Home },
+                    icon = { Icon(imageVector = Icons.Default.Home, contentDescription = null) },
+                    label = { Text(text = if (selectedLanguage == "ar") "تفـعيل" else "Shield", fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                )
+                NavigationBarItem(
+                    selected = activeTab == DashboardTab.Stats,
+                    onClick = { activeTab = DashboardTab.Stats },
+                    icon = { Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null) },
+                    label = { Text(text = if (selectedLanguage == "ar") "الإحصائيات" else "Analytics", fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                )
+                NavigationBarItem(
+                    selected = activeTab == DashboardTab.Settings,
+                    onClick = { activeTab = DashboardTab.Settings },
+                    icon = { Icon(imageVector = Icons.Default.Settings, contentDescription = null) },
+                    label = { Text(text = if (selectedLanguage == "ar") "الضبط واللغة" else "Settings", fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
                 )
             }
-
-            // STRAIN ASSESSOR BASIS
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp)
-                    ) {
-                        Text(
-                            text = Localization.get(selectedLanguage, "assessed_strain"),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = Localization.get(selectedLanguage, "assessed_strain_desc"),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(bottom = 14.dp)
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            EyeStrain.values().forEach { strain ->
-                                val isSelected = preStrain == strain
-                                val accentColor = when (strain) {
-                                    EyeStrain.None -> Color(0xFF4CAF50)
-                                    EyeStrain.Light -> Color(0xFF8BC34A)
-                                    EyeStrain.Medium -> Color(0xFFFF9800)
-                                    EyeStrain.Severe -> Color(0xFFF44336)
-                                }
-
-                                val translatedLabel = when (strain) {
-                                    EyeStrain.None -> Localization.get(selectedLanguage, "strain_none")
-                                    EyeStrain.Light -> Localization.get(selectedLanguage, "strain_light")
-                                    EyeStrain.Medium -> Localization.get(selectedLanguage, "strain_medium")
-                                    EyeStrain.Severe -> Localization.get(selectedLanguage, "strain_severe")
-                                }
-
+        }
+    ) { paddingValues ->
+        AnimatedContent(
+            targetState = activeTab,
+            transitionSpec = {
+                fadeIn(animationSpec = spring()) + slideInHorizontally { it / 3 } togetherWith
+                        fadeOut(animationSpec = spring()) + slideOutHorizontally { -it / 3 }
+            },
+            label = "TabContentTransition",
+            modifier = Modifier.padding(paddingValues)
+        ) { currentTab ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                when (currentTab) {
+                    DashboardTab.Home -> {
+                        // 1. GORGEOUS CENTRAL PULSING WIDGET
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(16.dp))
+                                        .size(220.dp)
+                                        .clip(CircleShape)
                                         .background(
-                                            if (isSelected) accentColor.copy(alpha = 0.15f)
-                                            else MaterialTheme.colorScheme.background
-                                        )
-                                        .border(
-                                            BorderStroke(
-                                                width = if (isSelected) 2.dp else 1.dp,
-                                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                                            ),
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                        .clickable { viewModel.setPreStrain(strain) }
-                                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    if (isServiceRunning) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.05f),
+                                                    Color.Transparent
+                                                )
+                                            )
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(10.dp)
-                                                .clip(CircleShape)
-                                                .background(accentColor)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(170.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .border(
+                                                BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center,
+                                            modifier = Modifier.padding(12.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Favorite,
+                                                contentDescription = null,
+                                                tint = if (isServiceRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            if (isServiceRunning) {
+                                                val progressVal = if (selectedIntervalMinutes > 0) (screenOnSeconds.toFloat() / (selectedIntervalMinutes * 60f)).coerceIn(0f, 1f) else 0f
+                                                Text(
+                                                    text = if (selectedLanguage == "ar") "درع النظر نشط" else "Shield Active",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = "%02d:%02d".format(screenOnSeconds / 60, screenOnSeconds % 60),
+                                                    style = MaterialTheme.typography.headlineMedium,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = if (selectedLanguage == "ar") "الهدف: $selectedIntervalMinutes د" else "Goal: ${selectedIntervalMinutes}m",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = if (selectedLanguage == "ar") "الحماية الذكية متوقفة" else "Shield Deactivated",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "OFF",
+                                                    style = MaterialTheme.typography.headlineMedium,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = if (selectedLanguage == "ar") "اضغط للتشغيل أدناه" else "Tap toggle below",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    if (isServiceRunning) {
+                                        val progressVal = if (selectedIntervalMinutes > 0) (screenOnSeconds.toFloat() / (selectedIntervalMinutes * 60f)).coerceIn(0f, 1f) else 0f
+                                        Canvas(modifier = Modifier.size(190.dp)) {
+                                            drawArc(
+                                                color = Color(0xFFABC7FF).copy(alpha = 0.2f),
+                                                startAngle = -90f,
+                                                sweepAngle = 360f,
+                                                useCenter = false,
+                                                style = Stroke(width = 4.dp.toPx())
+                                            )
+                                            drawArc(
+                                                color = Color(0xFF005FB0),
+                                                startAngle = -90f,
+                                                sweepAngle = 360f * progressVal,
+                                                useCenter = false,
+                                                style = Stroke(width = 6.dp.toPx())
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. PRIMARY MASTER SHIELD TRIGGER CARD
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isServiceRunning) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                    }
+                                ),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(18.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            if (isServiceRunning) {
+                                                viewModel.stopEyeProtection()
+                                            } else {
+                                                viewModel.startEyeProtection()
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(56.dp)
+                                            .testTag("protection_toggle_button"),
+                                        shape = CircleShape,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isServiceRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isServiceRunning) Icons.Default.Close else Icons.Default.PlayArrow,
+                                            contentDescription = null
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = translatedLabel,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface
+                                            text = if (isServiceRunning) {
+                                                if (selectedLanguage == "ar") "إلغاء تفعيل درع الحماية" else "Deactivate Eye Shield"
+                                            } else {
+                                                if (selectedLanguage == "ar") "تفعيل وحماية العين الآن" else "Activate Eye Shield"
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                    }
+
+                                    if (isServiceRunning) {
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        OutlinedButton(
+                                            onClick = { viewModel.startScreenBreak() },
+                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            shape = CircleShape
+                                        ) {
+                                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = if (selectedLanguage == "ar") "أخذ استراحة جيفية فورية" else "Take Quick Manual Break",
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. EYE FATIGUE COMFORT ASSESSOR
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "assessed_strain"),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "assessed_strain_desc"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        EyeStrain.values().forEach { strain ->
+                                            val isSelected = preStrain == strain
+                                            val accentColor = when (strain) {
+                                                EyeStrain.None -> Color(0xFF4CAF50)
+                                                EyeStrain.Light -> Color(0xFF8BC34A)
+                                                EyeStrain.Medium -> Color(0xFFFF9800)
+                                                EyeStrain.Severe -> Color(0xFFF44336)
+                                            }
+
+                                            val emoji = when (strain) {
+                                                EyeStrain.None -> "😊"
+                                                EyeStrain.Light -> "🙂"
+                                                EyeStrain.Medium -> "😐"
+                                                EyeStrain.Severe -> "😫"
+                                            }
+
+                                            val translatedLabel = when (strain) {
+                                                EyeStrain.None -> Localization.get(selectedLanguage, "strain_none")
+                                                EyeStrain.Light -> Localization.get(selectedLanguage, "strain_light")
+                                                EyeStrain.Medium -> Localization.get(selectedLanguage, "strain_medium")
+                                                EyeStrain.Severe -> Localization.get(selectedLanguage, "strain_severe")
+                                            }
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .background(
+                                                        if (isSelected) accentColor.copy(alpha = 0.12f)
+                                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                                    )
+                                                    .border(
+                                                        BorderStroke(
+                                                            width = if (isSelected) 2.dp else 1.dp,
+                                                            color = if (isSelected) accentColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                                                        ),
+                                                        shape = RoundedCornerShape(16.dp)
+                                                    )
+                                                    .clickable { viewModel.setPreStrain(strain) }
+                                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(text = emoji, fontSize = 20.sp)
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Text(
+                                                        text = translatedLabel,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. DYNAMIC MEDICAL INSIGHT RECOMMENDATIONS CARD
+                        item {
+                            val level = preStrain
+                            val tipTitle = if (selectedLanguage == "ar") {
+                                when (level) {
+                                    EyeStrain.None -> "وقاية بصرية: حافظ على استقرار بصرك"
+                                    EyeStrain.Light -> "توصية طبية عاجلة: ترطيب العين"
+                                    EyeStrain.Medium -> "تمرين علاجي: قاعدة 20-20-20"
+                                    EyeStrain.Severe -> "تنبيه طارئ: إراحة قرنية العين فوراً"
+                                }
+                            } else {
+                                when (level) {
+                                    EyeStrain.None -> "Visual Maintenance: Active Care"
+                                    EyeStrain.Light -> "Ophthalmologist Advice: Hydrate Cornea"
+                                    EyeStrain.Medium -> "Therapeutic Tip: 20-20-20 Rules"
+                                    EyeStrain.Severe -> "Urgent Alert: Complete Ocular Relief"
+                                }
+                            }
+
+                            val tipDesc = if (selectedLanguage == "ar") {
+                                when (level) {
+                                    EyeStrain.None -> "أنت بمستوى صحي رائع! استمر بضبط سطوع شاشة الهاتف للتكيف مع إضاءة المحيط لتقليل انقباض عضلات العين وتجنب التعب المفاجئ."
+                                    EyeStrain.Light -> "تعاني عيناك من تشنج عضلي بسيط. ركز على تمرين الرمش المتتالي السريع (Blinking) بمعدل 10 مرات لإثارة الغدد الدمعية ومنع جفاف القرنية."
+                                    EyeStrain.Medium -> "انقباض عضلات العين النشطة أعلى الآن. اتبع فورًا قانون (20-20-20): انظر لجسم يبعد 20 قدمًا لمدة 20 ثانية لتوطيد التركيز البؤري."
+                                    EyeStrain.Severe -> "مستوى التوتر العصبي البصري متضخم جداً. ننصح بوقف استخدام الجهاز فورًا، وإغلاق العينين بالكامل لتهدئة عضلات القزحية وتجنب الصداع."
+                                }
+                            } else {
+                                when (level) {
+                                    EyeStrain.None -> "Your eyes are comfortably adjusted. We recommend ensuring screen glare limits and room hydration are stable."
+                                    EyeStrain.Light -> "Slight fatigue is initiating. Take a quick blink test: blink 8-10 times consecutively to hydrate the cornea surface."
+                                    EyeStrain.Medium -> "Excess tension is present on critical muscles. Align with the 20-20-20 medical rule: focus on an item 20ft away for 20 seconds."
+                                    EyeStrain.Severe -> "Urgent optic strain alert. Immediately close your eyes completely, cup them with your palms (Palming technique) to block light."
+                                }
+                            }
+
+                            val containerColor = when (level) {
+                                EyeStrain.None -> Color(0xFFE8F5E9)
+                                EyeStrain.Light -> Color(0xFFF1F8E9)
+                                EyeStrain.Medium -> Color(0xFFFFF3E0)
+                                EyeStrain.Severe -> Color(0xFFFFEBEE)
+                            }
+
+                            val contentColor = when (level) {
+                                EyeStrain.None -> Color(0xFF2E7D32)
+                                EyeStrain.Light -> Color(0xFF558B2F)
+                                EyeStrain.Medium -> Color(0xFFE65100)
+                                EyeStrain.Severe -> Color(0xFFC62828)
+                            }
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = containerColor),
+                                border = BorderStroke(1.dp, contentColor.copy(alpha = 0.15f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(contentColor.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = contentColor,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = tipTitle,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = contentColor
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = tipDesc,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            lineHeight = 17.sp,
+                                            color = contentColor.copy(alpha = 0.85f)
                                         )
                                     }
                                 }
                             }
                         }
                     }
-                }
-            }
 
-            // HISTORY LOGS SECTION
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = Localization.get(selectedLanguage, "wellbeing_log"),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (historyLogs.isNotEmpty()) {
-                        TextButton(
-                            onClick = { viewModel.clearLogHistory() },
-                            modifier = Modifier.testTag("clear_history_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Trash Icon",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = Localization.get(selectedLanguage, "clear_history"),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
+                    DashboardTab.Stats -> {
+                        // 1. STATS METRICS ROW
+                        item {
+                            WellnessStatsRow(
+                                selectedLanguage = selectedLanguage,
+                                breaks = totalBreaks,
+                                seconds = totalSecondsRelaxed,
+                                improvements = improvementCount
                             )
                         }
-                    }
-                }
-            }
 
-            if (historyLogs.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = Localization.get(selectedLanguage, "no_breaks"),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                textAlign = TextAlign.Center
-                            )
+                        // 2. THE CHOSEN RADICAL WEEKLY PROGRESS CHART
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Text(
+                                        text = if (selectedLanguage == "ar") "بيان معدل تفادي الإجهاد البصري" else "Optimum Break Stability Trend",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    val chartPoints = remember(historyLogs) {
+                                        val points = historyLogs.take(5).reversed()
+                                        points.map { it.durationSeconds.toFloat().coerceIn(10f, 120f) }
+                                    }
+
+                                    if (chartPoints.isNotEmpty()) {
+                                        val primaryColor = MaterialTheme.colorScheme.primary
+                                        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                                        val surfaceVariant = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(130.dp)
+                                        ) {
+                                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                                val spacing = size.width / (chartPoints.size + 1)
+                                                val maxVal = 120f
+
+                                                // Clean grid horizontal bounds
+                                                for (i in 1..3) {
+                                                    val y = size.height * (i / 4f)
+                                                    drawLine(
+                                                        color = surfaceVariant,
+                                                        start = androidx.compose.ui.geometry.Offset(0f, y),
+                                                        end = androidx.compose.ui.geometry.Offset(size.width, y),
+                                                        strokeWidth = 1.dp.toPx()
+                                                    )
+                                                }
+
+                                                // Paint the contemporary styled rounded bar vectors
+                                                chartPoints.forEachIndexed { index, duration ->
+                                                    val x = spacing * (index + 1)
+                                                    val barHeight = size.height * (duration / maxVal)
+                                                    val y = size.height - barHeight
+
+                                                    drawRoundRect(
+                                                        color = if (index == chartPoints.lastIndex) tertiaryColor else primaryColor,
+                                                        topLeft = androidx.compose.ui.geometry.Offset(x - 12.dp.toPx(), y),
+                                                        size = androidx.compose.ui.geometry.Size(24.dp.toPx(), barHeight),
+                                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = if (selectedLanguage == "ar") "← الجلسات السابقة" else "← Older sessions",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                            )
+                                            Text(
+                                                text = if (selectedLanguage == "ar") "آخر استراحة مكتملة 🌟" else "Latest session Completed 🌟",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(90.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = if (selectedLanguage == "ar") "أكمل تمارين إراحة العين لتسجيل أولى الإحصائيات هنا." else "Log ocular break sessions to plot modern trend timelines here.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. LOGGER HEADER & ACTIONS
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = Localization.get(selectedLanguage, "wellbeing_log"),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                if (historyLogs.isNotEmpty()) {
+                                    TextButton(
+                                        onClick = { viewModel.clearLogHistory() },
+                                        modifier = Modifier.testTag("clear_history_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Trash Icon",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "clear_history"),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (historyLogs.isEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "no_breaks"),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            items(historyLogs, key = { it.id }) { log ->
+                                LogItemCard(selectedLanguage, log)
+                            }
                         }
                     }
-                }
-            } else {
-                items(historyLogs, key = { it.id }) { log ->
-                    LogItemCard(selectedLanguage, log)
+
+                    DashboardTab.Settings -> {
+                        // 1. LANGUAGE SETTINGS (CRITICAL OUT OF DASH MOTION!)
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "settings_lang"),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "settings_lang_desc"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                                    )
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        val languages = listOf(
+                                            "en" to "🇺🇸 EN",
+                                            "ar" to "🇸🇦 AR",
+                                            "fr" to "🇫🇷 FR",
+                                            "de" to "🇩🇪 DE",
+                                            "es" to "🇪🇸 ES"
+                                        )
+                                        languages.forEach { (code, label) ->
+                                            val isSelected = selectedLanguage == code
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { viewModel.setLanguage(code) },
+                                                label = { Text(label, fontWeight = FontWeight.Bold) },
+                                                modifier = Modifier.testTag("language_selector_$code"),
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. ADAPTIVE ALERT INTERVAL GRIDS
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Text(
+                                        text = if (selectedLanguage == "ar") "مؤقت ودورة التذكير التلقائي" else "Auto-Alert Rest Interval",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (selectedLanguage == "ar") {
+                                            "سيقوم النظام بفحص مدة التشغيل وإرسال إشعار استراحة فور تجاوز الوقت المحدد."
+                                        } else {
+                                            "Defines screen monitoring window intervals. Rest warning will fire post selected cycle duration."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        val intervals = listOf(
+                                            1 to (if (selectedLanguage == "ar") "١ د للتجربة" else "1 M (Test)"),
+                                            5 to (if (selectedLanguage == "ar") "٥ دقائق" else "5 Mins"),
+                                            20 to (if (selectedLanguage == "ar") "٢٠ دقيقة" else "20 Mins"),
+                                            30 to (if (selectedLanguage == "ar") "٣٠ دقيقة" else "30 Mins"),
+                                            60 to (if (selectedLanguage == "ar") "٦٠ دقيقة" else "60 Mins")
+                                        )
+                                        intervals.forEach { (mins, label) ->
+                                            val isSelected = selectedIntervalMinutes == mins
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { viewModel.updateServiceInterval(mins) },
+                                                label = { Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondary
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. ENGINE MODE SWITCH AI / OFFLINE
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .clickable { viewModel.setOfflineMode(!isOfflineMode) }
+                                        .padding(18.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "settings_mode"),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = if (isOfflineMode) {
+                                                Localization.get(selectedLanguage, "settings_mode_offline")
+                                            } else {
+                                                Localization.get(selectedLanguage, "settings_mode_gemini")
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                    Switch(
+                                        checked = !isOfflineMode,
+                                        onCheckedChange = { viewModel.setOfflineMode(!it) },
+                                        modifier = Modifier.testTag("mode_switch")
+                                    )
+                                }
+                            }
+                        }
+
+                        // 4. SCIENTIFIC ADVICE OF 20-20-20 EXPLAINERS
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Text(
+                                        text = if (selectedLanguage == "ar") "قاعدة 20-20-20 المعتمدة طبياً" else "The Medical 20-20-20 Rule",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = if (selectedLanguage == "ar") {
+                                            "لأجل حماية بصرك ووقايته من أعراض متلازمة الرؤية الحاسوبية (Computer Vision Syndrome)، تنص الأكاديمية الأمريكية لطب العيون على تفعيل هذا المبدأ:\n\n" +
+                                            "١. كل ٢٠ دقيقة من التحديق المستمر في الشاشة.\n" +
+                                            "٢. خذ استراحة بصرية لتركيز نظرك على مجسم يبعد ٢٠ قدماً على الأقل.\n" +
+                                            "٣. تأمل هذا المجسم وارمش عينيك بهدوء لمدة لا تقل عن ٢٠ ثانية لتعديل انقباضات العضلات الهدبية تماماً."
+                                        } else {
+                                            "To reduce symptoms of Computer Vision Syndrome and minimize long-term optical strain, ophthalmology experts advise checking these three instructions:\n\n" +
+                                            "1. For every 20 minutes spent working in front of a flat screen.\n" +
+                                            "2. Direct your gaze to an object at least 20 feet away.\n" +
+                                            "3. Keep focusing on that distant point for at least 20 seconds to completely release ciliary muscle spasms."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        lineHeight = 18.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
