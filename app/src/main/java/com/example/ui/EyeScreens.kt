@@ -1224,8 +1224,6 @@ fun ExerciseScreen(viewModel: EyeViewModel) {
     val isRunning by viewModel.isTimerRunning.collectAsState()
     val animatedScale by viewModel.visualOrbScale.collectAsState()
 
-    var showJsonDrawer by remember { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -1302,210 +1300,159 @@ fun ExerciseScreen(viewModel: EyeViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Title
-                        Text(
-                            text = exercise.exercise_title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center
-                        )
-
-                        // Visual Orb Timer
-                        Box(
-                            contentAlignment = Alignment.Center,
+                        Column(
                             modifier = Modifier
-                                .size(200.dp)
-                                .padding(12.dp)
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(160.dp)
-                                    .scale(animatedScale * 1.15f)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                            // Title
+                            Text(
+                                text = exercise.exercise_title,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center
                             )
 
+                            // Visual Orb Timer
                             Box(
+                                contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(130.dp)
-                                    .scale(animatedScale)
-                                    .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surface),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "$timeLeft",
-                                        style = MaterialTheme.typography.displayMedium.copy(
-                                            fontSize = 42.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-                                    Text(
-                                        text = Localization.get(selectedLanguage, "seconds"),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.ExtraBold,
-                                            letterSpacing = 2.sp,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-                                }
-                            }
-
-                            val progress = if (totalDuration > 0) timeLeft.toFloat() / totalDuration else 1f
-                            val activeColor = MaterialTheme.colorScheme.primary
-                            val trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                            Canvas(modifier = Modifier.size(180.dp)) {
-                                drawArc(
-                                    color = trackColor,
-                                    startAngle = -90f,
-                                    sweepAngle = 360f,
-                                    useCenter = false,
-                                    style = Stroke(width = 3.dp.toPx())
-                                )
-                                drawArc(
-                                    color = activeColor,
-                                    startAngle = -90f,
-                                    sweepAngle = 360f * progress,
-                                    useCenter = false,
-                                    style = Stroke(width = 4.dp.toPx())
-                                )
-                            }
-                        }
-
-                        // Medical Benefit Card
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.Top
+                                    .size(200.dp)
+                                    .padding(12.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(MaterialTheme.colorScheme.primary),
+                                        .size(160.dp)
+                                        .scale(animatedScale * 1.15f)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(130.dp)
+                                        .scale(animatedScale)
+                                        .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = Localization.get(selectedLanguage, "medical_benefit"),
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.height(3.dp))
-                                    Text(
-                                        text = exercise.benefit,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            lineHeight = 16.sp,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        // Instructions Card
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = Localization.get(selectedLanguage, "instructions"),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = exercise.steps,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        // JSON EXTENSION METADATA PREVIEW (For requirements compliance!)
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { showJsonDrawer = !showJsonDrawer },
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.secondary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = if (selectedLanguage == "ar") "كود الـ JSON التابع لـ Gemini (مطور)" else "Raw Gemini JSON Metadata",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.secondary
-                                        )
-                                    }
-                                    Icon(
-                                        imageVector = if (showJsonDrawer) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.secondary
-                                    )
-                                }
-                                if (showJsonDrawer) {
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                color = Color(0xFF1E1E1E),
-                                                shape = RoundedCornerShape(10.dp)
-                                            )
-                                            .padding(12.dp)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            text = exercise.toJsonString(),
-                                            color = Color(0xFFA3D8A5),
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontSize = 11.sp,
-                                                fontFamily = FontFamily.Monospace
+                                            text = "$timeLeft",
+                                            style = MaterialTheme.typography.displayMedium.copy(
+                                                fontSize = 42.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        )
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "seconds"),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = 2.sp,
+                                                color = MaterialTheme.colorScheme.primary
                                             )
                                         )
                                     }
+                                }
+
+                                val progress = if (totalDuration > 0) timeLeft.toFloat() / totalDuration else 1f
+                                val activeColor = MaterialTheme.colorScheme.primary
+                                val trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                Canvas(modifier = Modifier.size(180.dp)) {
+                                    drawArc(
+                                        color = trackColor,
+                                        startAngle = -90f,
+                                        sweepAngle = 360f,
+                                        useCenter = false,
+                                        style = Stroke(width = 3.dp.toPx())
+                                    )
+                                    drawArc(
+                                        color = activeColor,
+                                        startAngle = -90f,
+                                        sweepAngle = 360f * progress,
+                                        useCenter = false,
+                                        style = Stroke(width = 4.dp.toPx())
+                                    )
+                                }
+                            }
+
+                            // Medical Benefit Card
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Favorite,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "medical_benefit"),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Text(
+                                            text = exercise.benefit,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                lineHeight = 16.sp,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Instructions Card
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(18.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "instructions"),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = exercise.steps,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                             }
                         }
