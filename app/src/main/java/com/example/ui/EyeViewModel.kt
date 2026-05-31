@@ -115,6 +115,16 @@ class EyeViewModel(application: Application) : AndroidViewModel(application) {
         _isOfflineMode.value = savedOffline
 
         startOrbAnimationLoop()
+
+        // Observe the service alert state to automatically trigger the break screen inside the app
+        viewModelScope.launch {
+            EyeBreakService.isAlertTriggered.collect { triggered ->
+                if (triggered && _currentScreen.value != Screen.Exercise && _currentScreen.value != Screen.PostFeedback) {
+                    startScreenBreak()
+                    EyeBreakService.resetAlert()
+                }
+            }
+        }
     }
 
     fun setLanguage(code: String) {
