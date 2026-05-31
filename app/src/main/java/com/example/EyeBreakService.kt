@@ -21,6 +21,7 @@ class EyeBreakService : Service() {
 
     private var isScreenOn = true
     private var screenReceiver: BroadcastReceiver? = null
+    private var screenOffTimestamp: Long = 0L
 
     companion object {
         private const val CHANNEL_ID_SILENT = "eye_break_silent_channel"
@@ -80,11 +81,22 @@ class EyeBreakService : Service() {
                 when (intent?.action) {
                     Intent.ACTION_SCREEN_ON -> {
                         isScreenOn = true
+                        if (screenOffTimestamp > 0L) {
+                            val timeOffline = System.currentTimeMillis() - screenOffTimestamp
+                            if (timeOffline >= 60000L) {
+                                // 1-minute rest rule satisfied: reset timer completely
+                                _screenOnTimeSeconds.value = 0L
+                                _isAlertTriggered.value = false
+                            }
+                        }
                         resumeTicker()
+                        updateNotification(_isAlertTriggered.value)
                     }
                     Intent.ACTION_SCREEN_OFF -> {
                         isScreenOn = false
+                        screenOffTimestamp = System.currentTimeMillis()
                         pauseTicker()
+                        updateNotification(_isAlertTriggered.value)
                     }
                 }
             }
@@ -161,15 +173,23 @@ class EyeBreakService : Service() {
         val lang = getLanguage(this)
         
         val title = if (lang == "ar") {
-            "حماية العين نشطة"
+            if (isScreenOn) "حماية العين نشطة" else "حماية العين متوقفة مؤقتاً"
         } else {
-            "Eye Protection Active"
+            if (isScreenOn) "Eye Protection Active" else "Eye Protection Paused"
         }
         
         val statusMessage = if (lang == "ar") {
-            "حماية العين نشطة 👁 - جاري مراقبة وقت الشاشة."
+            if (isScreenOn) {
+                "حماية العين نشطة 👁 - جاري مراقبة وقت الشاشة."
+            } else {
+                "تم إيقاف المراقب مؤقتاً لأن الشاشة مغلقة."
+            }
         } else {
-            "Eye Protection Active 👁 - Monitoring your screen time."
+            if (isScreenOn) {
+                "Eye Protection Active 👁 - Monitoring your screen time."
+            } else {
+                "Monitoring paused while screen is off."
+            }
         }
 
         val intent = Intent(this, MainActivity::class.java).apply {
