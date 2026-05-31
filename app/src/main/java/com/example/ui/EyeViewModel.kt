@@ -125,13 +125,25 @@ class EyeViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putBoolean("offline_mode", enabled).apply()
     }
 
+    var onStartServiceRequested: (() -> Unit)? = null
+
     fun startEyeProtection() {
-        val context = getApplication<Application>()
-        val intent = Intent(context, EyeBreakService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
+        val callback = onStartServiceRequested
+        if (callback != null) {
+            callback()
         } else {
-            context.startService(intent)
+            val context = getApplication<Application>()
+            val intent = Intent(context, EyeBreakService::class.java)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                android.util.Log.d("EyeBreakService", "Service started successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("EyeBreakService", "Error: failed to start", e)
+            }
         }
     }
 

@@ -96,7 +96,6 @@ class EyeBreakService : Service() {
         registerReceiver(screenReceiver, filter)
 
         _isRunning.value = true
-        startForeground(NOTIFICATION_ID, buildStatusNotification())
         resumeTicker()
     }
 
@@ -105,6 +104,13 @@ class EyeBreakService : Service() {
         if (action == "STOP") {
             stopSelf()
             return START_NOT_STICKY
+        }
+        try {
+            createNotificationChannel()
+            startForeground(NOTIFICATION_ID, buildStatusNotification())
+            android.util.Log.d("EyeBreakService", "Service started successfully")
+        } catch (e: Exception) {
+            android.util.Log.e("EyeBreakService", "Error: failed to start", e)
         }
         return START_STICKY
     }
