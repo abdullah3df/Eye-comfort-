@@ -947,6 +947,203 @@ fun DashboardScreen(viewModel: EyeViewModel) {
                                 }
                             }
                         }
+
+                        // 5. SUGGESTION AND FEEDBACK DIRECTIVES SECTION
+                        item {
+                            val supportEmail = "info.cik@cikcoin.art"
+                            val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                                ),
+                                shape = RoundedCornerShape(24.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    // Header with Email/Suggestion Icon
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Email,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "suggestion_title"),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    // Description
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "suggestion_desc"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        lineHeight = 18.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    // Guidelines Lists
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "suggestion_guide1"),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            lineHeight = 17.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                        )
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "suggestion_guide2"),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            lineHeight = 17.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                        )
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "suggestion_guide3"),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            lineHeight = 17.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Divider(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Display Email Label & Interactive Copy Box
+                                    Text(
+                                        text = Localization.get(selectedLanguage, "suggestion_email_label"),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable {
+                                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(supportEmail))
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    Localization.get(selectedLanguage, "suggestion_email_copied"),
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Face,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = supportEmail,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Copy Email",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Large Action Button to launch Email Client
+                                    Button(
+                                        onClick = {
+                                            val emailIntent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                                                data = android.net.Uri.parse("mailto:")
+                                                putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(supportEmail))
+                                                val subjectStr = if (selectedLanguage == "ar") {
+                                                    "اقتراح لتطبيق راحة العين"
+                                                } else {
+                                                    "Eye Relief App Suggestion"
+                                                }
+                                                putExtra(android.content.Intent.EXTRA_SUBJECT, subjectStr)
+                                            }
+                                            try {
+                                                context.startActivity(emailIntent)
+                                            } catch (e: Exception) {
+                                                // Fallback copy if failure
+                                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(supportEmail))
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    Localization.get(selectedLanguage, "suggestion_email_copied"),
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Send,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = Localization.get(selectedLanguage, "suggestion_btn"),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

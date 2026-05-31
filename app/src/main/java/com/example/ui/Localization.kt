@@ -45,7 +45,15 @@ object Localization {
             "confirm" to "Confirm",
             "settings_mode" to "Exercise Generation Mode",
             "settings_mode_gemini" to "AI Smart Generation (Gemini)",
-            "settings_mode_offline" to "Offline Presets Only (Eco-mode)"
+            "settings_mode_offline" to "Offline Presets Only (Eco-mode)",
+            "suggestion_title" to "Suggestions & Feedback",
+            "suggestion_desc" to "Do you have ideas to make Eye Relief better? We would love to hear from you! Please read these helpful guidelines before submitting:",
+            "suggestion_guide1" to "• Be specific about the feature, tool, or visual style that you propose.",
+            "suggestion_guide2" to "• Highlight how this addition would reduce eye tension or improve comfort.",
+            "suggestion_guide3" to "• Keep any customized instructions clear, brief, and structured.",
+            "suggestion_email_label" to "Support & Suggestions Email:",
+            "suggestion_btn" to "Compose Suggestions Email",
+            "suggestion_email_copied" to "Email address copied to clipboard!"
         ),
         "ar" to mapOf(
             "app_title" to "راحة العين",
@@ -90,7 +98,15 @@ object Localization {
             "confirm" to "تأكيد",
             "settings_mode" to "طريقة جلب التمارين",
             "settings_mode_gemini" to "ذكاء اصطناعي ذكي (Gemini)",
-            "settings_mode_offline" to "التمارين المخزنة مسبقًا فقط (توفير البيانات)"
+            "settings_mode_offline" to "التمارين المخزنة مسبقًا فقط (توفير البيانات)",
+            "suggestion_title" to "الاقتراحات والتحسينات البصرية",
+            "suggestion_desc" to "هل تشعر بأن هناك ميزات بصرية مفقودة أو ترغب بإضافة تحسينات إضافية؟ نسعد بسماع رأيك! وننصح باتباع هذه الإرشادات لإيصال فكرتك بوضوح:",
+            "suggestion_guide1" to "• صف الميزة المقترحة أو التحسين البصري بدقة داخل محتوى البريد الإلكتروني.",
+            "suggestion_guide2" to "• وضح كيف يسهم هذا التحديث في الوقاية من تعب العين وتقليل الجهد العصبي للبصر.",
+            "suggestion_guide3" to "• حافظ على البساطة والوضوح في الصياغة لجعل التحسين قابلاً للتنفيذ تلقائياً.",
+            "suggestion_email_label" to "بريد الاقتراحات والملاحظات المعتمد:",
+            "suggestion_btn" to "إنشاء بريد الاقتراح والتحسين",
+            "suggestion_email_copied" to "تم نسخ عنوان البريد الإلكتروني بنجاح!"
         ),
         "fr" to mapOf(
             "app_title" to "Soulagement des Yeux",
@@ -135,7 +151,15 @@ object Localization {
             "confirm" to "Confirmer",
             "settings_mode" to "Génération d'exercices",
             "settings_mode_gemini" to "Génération intelligente IA (Gemini)",
-            "settings_mode_offline" to "Préréglages hors ligne uniquement"
+            "settings_mode_offline" to "Préréglages hors ligne uniquement",
+            "suggestion_title" to "Suggestions & Retours",
+            "suggestion_desc" to "Vous avez des idées pour améliorer Eye Relief ? Nous aimerions les entendre ! Veuillez lire ces directives avant d'envoyer :",
+            "suggestion_guide1" to "• Soyez précis sur la fonctionnalité ou le style visuel proposé.",
+            "suggestion_guide2" to "• Expliquez comment cela réduit la fatigue visuelle.",
+            "suggestion_guide3" to "• Gardez des instructions claires, simples et structurées.",
+            "suggestion_email_label" to "E-mail de support et suggestions :",
+            "suggestion_btn" to "Rédiger un e-mail de suggestion",
+            "suggestion_email_copied" to "Adresse e-mail copiée !"
         ),
         "de" to mapOf(
             "app_title" to "Augenentlastung",
@@ -180,7 +204,15 @@ object Localization {
             "confirm" to "Bestätigen",
             "settings_mode" to "Übungsgenerierungsmodus",
             "settings_mode_gemini" to "KI-Generierung (Gemini)",
-            "settings_mode_offline" to "Nur Offline-Voreinstellungen"
+            "settings_mode_offline" to "Nur Offline-Voreinstellungen",
+            "suggestion_title" to "Vorschläge & Feedback",
+            "suggestion_desc" to "Haben Sie Ideen zur Verbesserung von Eye Relief? Wir würden uns freuen, von Ihnen zu hören! Bitte beachten Sie diese Richtlinien vor dem Absenden:",
+            "suggestion_guide1" to "• Seien Sie präzise bezüglich der vorgeschlagenen Funktion oder des Stils.",
+            "suggestion_guide2" to "• Erklären Sie, wie dies die Belastung der Augen reduziert.",
+            "suggestion_guide3" to "• Halten Sie Anweisungen klar, einfach und gut strukturiert.",
+            "suggestion_email_label" to "E-Mail für Vorschläge und Support:",
+            "suggestion_btn" to "Vorschlags-E-Mail verfassen",
+            "suggestion_email_copied" to "E-Mail-Adresse kopiert!"
         ),
         "es" to mapOf(
             "app_title" to "Alivio Ocular",
@@ -225,7 +257,15 @@ object Localization {
             "confirm" to "Confirmar",
             "settings_mode" to "Modo de generación de ejercicios",
             "settings_mode_gemini" to "Generación inteligente IA (Gemini)",
-            "settings_mode_offline" to "Solo preajustes sin conexión"
+            "settings_mode_offline" to "Solo preajustes sin conexión",
+            "suggestion_title" to "Sugerencias y Comentarios",
+            "suggestion_desc" to "¿Tiene ideas para mejorar el Alivio Ocular? ¡Nos encantaría escucharlas! Por favor, siga estas pautas antes de enviar:",
+            "suggestion_guide1" to "• Sea preciso sobre la función o el estilo visual propuesto.",
+            "suggestion_guide2" to "• Explique cómo esto reduce la tensión o fatiga ocular.",
+            "suggestion_guide3" to "• Mantenga las instrucciones claras, breves y estructuradas.",
+            "suggestion_email_label" to "Correo de soporte y sugerencias:",
+            "suggestion_btn" to "Redactar correo de sugerencias",
+            "suggestion_email_copied" to "¡Dirección de correo copiada!"
         )
     )
 
